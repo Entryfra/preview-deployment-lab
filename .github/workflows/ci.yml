@@ -1,21 +1,35 @@
-name: CI
+name: Build Frontend Image
 
 on:
   push:
     branches:
       - main
 
-  pull_request:
-    branches:
-      - main
+permissions:
+  contents: read
+  packages: write
 
 jobs:
-  build:
+  build-frontend:
     runs-on: ubuntu-latest
 
     steps:
       - name: Скачать код
         uses: actions/checkout@v4
 
-      - name: Собрать Docker-образы
-        run: docker compose build
+      - name: Войти в Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Собрать frontend-образ
+        run: |
+          docker build \
+            -t ghcr.io/entryfra/preview-deployment-frontend:latest \
+            ./frontend
+
+      - name: Загрузить образ в Registry
+        run: |
+          docker push ghcr.io/entryfra/preview-deployment-frontend:latest
