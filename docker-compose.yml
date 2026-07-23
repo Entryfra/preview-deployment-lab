@@ -1,0 +1,47 @@
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: petdb
+      DB_USER: petuser
+      DB_PASSWORD: petpassword
+
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:17-alpine
+
+    environment:
+      POSTGRES_DB: petdb
+      POSTGRES_USER: petuser
+      POSTGRES_PASSWORD: petpassword
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  nginx:
+    image: nginx:alpine
+
+    ports:
+      - "80:80"
+
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+
+    depends_on:
+      - frontend
+      - backend
+
+volumes:
+  postgres_data:
