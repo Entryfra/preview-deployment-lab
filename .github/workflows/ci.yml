@@ -1,4 +1,4 @@
-name: Build Frontend Image
+name: Build and Deploy Frontend
 
 on:
   push:
@@ -10,7 +10,7 @@ permissions:
   packages: write
 
 jobs:
-  build-frontend:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
@@ -33,3 +33,20 @@ jobs:
       - name: Загрузить образ в Registry
         run: |
           docker push ghcr.io/entryfra/preview-deployment-frontend:latest
+
+      - name: Подготовить SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/github_actions
+          chmod 600 ~/.ssh/github_actions
+          ssh-keyscan -H "${{ secrets.SERVER_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Обновить приложение на VPS
+        run: |
+          ssh \
+            -i ~/.ssh/github_actions \
+            "${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}" \
+            'cd /home/ilya/preview-deployment-lab &&
+             git pull &&
+             docker compose -f docker-compose.prod.yml pull &&
+             docker compose -f docker-compose.prod.yml up -d'
