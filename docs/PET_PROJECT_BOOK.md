@@ -1,131 +1,335 @@
 # PET PROJECT BOOK
 
-## Цель
+---
 
-За 5 дней собрать учебный pet-проект с автоматическим CI/CD и Preview Deployments.
+# Цель
 
-## Финальная архитектура
+Построить современный pet-проект с инфраструктурой, максимально похожей на реальную production-среду.
 
-- Frontend: React + Vite, SPA
-- Backend: Self-hosted Convex
-- Database: Postgres
-- Контейнеры: Docker
-- Управление сервисами: Docker Compose
-- CI/CD: GitHub Actions
-- Registry: GHCR
-- Reverse proxy: Traefik
-- Сервер: VPS
-- Preview-домены: wildcard DNS
+Основные задачи:
 
-## Финальная схема
+- освоить Docker;
+- освоить GitHub Actions;
+- построить полноценный CI/CD;
+- реализовать Preview Deployments;
+- использовать Infrastructure as Code.
 
-```text
-GitHub
-   ↓
+---
+
+# Финальная архитектура
+
+Frontend: React + Vite (SPA)
+
+Backend: Self-hosted Convex
+
+Database: PostgreSQL
+
+Containers: Docker
+
+Orchestration: Docker Compose
+
+CI/CD: GitHub Actions
+
+Registry: GHCR
+
+Reverse Proxy: Traefik
+
+Server: VPS
+
+Preview Deployments: Wildcard DNS
+
+---
+
+# Финальная схема
+
+```
+Developer
+     │
+ git push
+     │
+     ▼
+ GitHub
+     │
+     ▼
 GitHub Actions
-   ↓
+     │
+     ▼
 GHCR
-   ↓
-VPS
-   ↓
+     │
+     ▼
+Production VPS
+     │
+     ▼
 Traefik
-   ├── Production
-   ├── Frontend Preview PR-*
-   └── Full Preview PR-*
-          ├── Frontend
-          ├── Self-hosted Convex
-          └── Postgres
+ ├── Production
+ ├── Frontend Preview PR-*
+ └── Full Preview PR-*
+      ├── Frontend
+      ├── Convex
+      └── PostgreSQL
 ```
 
-## Что уже сделано
+---
 
-- Установлены Docker и Docker Compose.
-- Создан репозиторий preview-deployment-lab.
-- Создан frontend на React + Vite.
-- Создан учебный Node.js backend.
-- Создан Nginx reverse proxy.
-- Создан docker-compose.yml.
-- Frontend и backend запускаются через Docker Compose.
-- Настроен GitHub Actions.
-- GitHub Actions собирает frontend Docker image.
-- Frontend image публикуется в GHCR:
-  ghcr.io/entryfra/preview-deployment-frontend:latest
-- Создан SSH-ключ для GitHub Actions.
-- В GitHub Secrets добавлены:
-  - SSH_PRIVATE_KEY
-  - SERVER_HOST
-  - SERVER_USER
+# Что уже сделано
 
-## Принятые решения
+## Локальная разработка
 
-- Настоящий backend проекта — Self-hosted Convex.
-- Отдельного Node.js backend в финальной архитектуре не будет.
-- Учебный Node.js backend пока существует в репозитории, но развивать его не будем.
-- Сначала делаем автоматический deploy ветки main.
-- Затем устанавливаем Traefik.
-- Потом делаем frontend preview.
-- После этого добавляем Self-hosted Convex и Postgres.
-- Последний этап — full preview для каждого PR.
+- ✅ установлен Docker
+- ✅ установлен Docker Compose
+- ✅ создан репозиторий preview-deployment-lab
+- ✅ создан frontend (React + Vite)
+- ✅ создан учебный backend (Node.js)
+- ✅ настроен Nginx
+- ✅ создан docker-compose.yml
+- ✅ frontend и backend запускаются через Docker Compose
 
-## Текущая точка
+---
 
-Frontend image уже собирается в GitHub Actions и загружается в GHCR.
+## GitHub
 
-Следующий этап:
+- ✅ настроен GitHub Actions
+- ✅ GitHub Actions собирает frontend image
+- ✅ Docker image публикуется в GHCR
 
-```text
-GitHub Actions
-   ↓ SSH
-VPS
-   ↓
+Образ:
+
+```
+ghcr.io/entryfra/preview-deployment-frontend:latest
+```
+
+---
+
+## Production VPS
+
+- ✅ приобретен настоящий VPS
+- ✅ установлена Ubuntu Server
+- ✅ установлен Docker
+- ✅ установлен Docker Compose
+- ✅ репозиторий перенесен на VPS
+- ✅ VPS переведен на SSH
+- ✅ настроен Deploy Key (Read Only)
+- ✅ GitHub Actions подключается к VPS по SSH
+- ✅ автоматический deployment успешно работает
+
+После каждого git push автоматически выполняется:
+
+```
 docker compose pull
-   ↓
+
 docker compose up -d
 ```
 
-То есть нужно сделать автоматический deployment ветки main на сервер.
+---
 
-## План на 5 дней
+# Что изучено
 
-### День 1
+## Docker
 
-- Зафиксировать документацию.
-- Сделать автоматический deploy frontend из main на VPS.
+- Docker Images
+- Docker Containers
+- Docker Compose
+- Docker Registry
+- Docker Layers
 
-### День 2
+---
 
-- Установить Traefik.
-- Подключить production-маршрут.
-- Настроить домен или проверить через тестовый адрес.
+## GitHub Actions
 
-### День 3
+Понял принцип работы CI/CD.
 
-- Настроить wildcard DNS.
-- Сделать frontend-only preview по номеру PR.
+После git push автоматически запускается pipeline.
 
-### День 4
+Pipeline:
 
-- Настроить удаление preview после закрытия PR.
-- Добавить Self-hosted Convex и Postgres.
+```
+Checkout
 
-### День 5
+↓
 
-- Сделать full preview.
-- Проверить весь жизненный цикл.
-- Привести документацию и репозиторий в порядок.
+Docker Build
 
-## Правило работы
+↓
+
+Docker Push
+
+↓
+
+SSH
+
+↓
+
+Production VPS
+
+↓
+
+docker compose pull
+
+↓
+
+docker compose up -d
+```
+
+---
+
+## GitHub Registry
+
+Научился:
+
+- публиковать Docker Images
+- скачивать их на VPS
+
+---
+
+## SSH
+
+Изучено:
+
+- SSH Keys
+- authorized_keys
+- known_hosts
+- Deploy Keys
+- GitHub Secrets
+
+---
+
+## Production
+
+Понял основные принципы:
+
+- GitHub — Source of Truth.
+- Production VPS не должен делать git push.
+- VPS имеет только минимально необходимые права.
+- Используется Principle of Least Privilege.
+- Сервер только запускает приложение.
+
+---
+
+# Принятые решения
+
+Настоящий backend проекта — Self-hosted Convex.
+
+Учебный Node.js backend используется только для изучения Docker.
+
+Production VPS использует Deploy Key только на чтение.
+
+Все изменения выполняются только через GitHub.
+
+---
+
+# Текущая архитектура
+
+```
+Developer
+
+↓
+
+Git Push
+
+↓
+
+GitHub
+
+↓
+
+GitHub Actions
+
+↓
+
+Docker Build
+
+↓
+
+GHCR
+
+↓
+
+SSH
+
+↓
+
+Production VPS
+
+↓
+
+docker compose pull
+
+↓
+
+docker compose up -d
+```
+
+---
+
+# Следующий этап
+
+Следующий крупный этап проекта:
+
+## Traefik
+
+Нужно:
+
+- заменить Nginx на Traefik;
+- настроить reverse proxy;
+- подготовить инфраструктуру для Preview Deployments.
+
+---
+
+# План проекта
+
+## Этап 1
+
+- ✅ Docker
+- ✅ Docker Compose
+- ✅ GitHub Actions
+- ✅ Production Deploy
+
+---
+
+## Этап 2
+
+- ⏳ Traefik
+
+---
+
+## Этап 3
+
+- ⏳ Wildcard DNS
+
+---
+
+## Этап 4
+
+- ⏳ Frontend Preview
+
+---
+
+## Этап 5
+
+- ⏳ Self-hosted Convex
+
+---
+
+## Этап 6
+
+- ⏳ PostgreSQL
+
+---
+
+## Этап 7
+
+- ⏳ Full Preview Deployments
+
+---
+
+# Правило проекта
 
 Этот файл является единственным источником правды.
 
-В начале нового чата файл нужно загрузить и написать:
+Каждый завершенный этап обязан содержать:
 
-«Продолжаем pet-проект. Используй PET_PROJECT_BOOK.md как источник истины».
-
-После каждого завершённого этапа обновлять:
-
-- что сделали;
-- какие файлы изменили;
-- какие команды использовали;
-- какие ошибки возникли;
-- какой следующий шаг.
+- что сделано;
+- чему научился;
+- какие решения были приняты;
+- текущую архитектуру;
+- следующий этап.
