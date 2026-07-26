@@ -46,7 +46,7 @@ jobs:
           ssh \
             -i ~/.ssh/github_actions \
             "${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}" \
-            'cd /home/ilya/preview-deployment-lab &&
+            'cd /home/preview-deployment-lab &&
              git pull &&
              docker compose -f docker-compose.prod.yml pull &&
              docker compose -f docker-compose.prod.yml up -d'
