@@ -1,19 +1,24 @@
 services:
   frontend-preview:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
+    # Берём готовый образ из GHCR.
+    # PR_NUMBER превратится, например, в pr-2.
+    image: ghcr.io/entryfra/preview-deployment-frontend:pr-${PR_NUMBER}
 
     labels:
       - traefik.enable=true
-      - traefik.http.routers.frontend-pr-15.rule=Host(`pr-${PR_NUMBER}.localhost`)
-      - traefik.http.routers.frontend-pr-15.entrypoints=web
-      - traefik.http.services.frontend-pr-15.loadbalancer.server.port=80
 
+      # Для PR №2 получится адрес pr-2.localhost
+      - traefik.http.routers.frontend-pr-${PR_NUMBER}.rule=Host(`pr-${PR_NUMBER}.localhost`)
+      - traefik.http.routers.frontend-pr-${PR_NUMBER}.entrypoints=web
+
+      # Frontend внутри контейнера слушает порт 80
+      - traefik.http.services.frontend-pr-${PR_NUMBER}.loadbalancer.server.port=80
+
+    # Подключаем preview к сети, где находится общий Traefik
     networks:
       - traefik-network
 
 networks:
   traefik-network:
     external: true
-    name: preview-deployment-lab_default    
+    name: preview-deployment-lab_default
