@@ -65,8 +65,6 @@ jobs:
               Адрес: http://pr-${{ github.event.pull_request.number }}.localhost`
             })
 
-Структура должна быть такой:
-
 
               
   # Этот job удаляет preview после закрытия или merge PR
