@@ -94,7 +94,7 @@ jobs:
               up -d --force-recreate
 
       # Оставляем сообщение в Pull Request
-       - name: Comment preview link
+      - name: Comment preview link
         uses: actions/github-script@v8
         with:
           script: |
