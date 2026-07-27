@@ -13,7 +13,7 @@ function App() {
 
   return (
     <main>
-      <h1>Frontend работает</h1>
+      <h1>Новая версия работает работает</h1>
       <p>Ответ backend: {message}</p>
     </main>
   )
