@@ -29,7 +29,7 @@ jobs:
 
           script: |
             # Переходим в папку проекта на сервере
-            cd ~/preview-deployment-lab
+             cd /home/ilya/preview-deployment-lab
 
             # Загружаем свежие коммиты из GitHub
             git fetch origin
@@ -63,7 +63,7 @@ jobs:
 
           script: |
             # Переходим в папку проекта на сервере
-            cd ~/preview-deployment-lab
+            cd /home/ilya/preview-deployment-lab
 
             # Удаляем compose-проект именно этого PR
             # Например, для PR №18 удалится preview-18
