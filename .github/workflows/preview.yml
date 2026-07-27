@@ -2,6 +2,7 @@ name: Preview Deployment
 
 permissions:
   contents: read
+  packages: write
   pull-requests: write
   issues: write
 
@@ -10,48 +11,71 @@ on:
   pull_request:
     types:
       - opened       # PR создали
-      - synchronize  # в ветку PR запушили новый коммит
-      - reopened     # закрытый PR снова открыли
+      - synchronize  # в ветку PR добавили новый commit
+      - reopened     # PR снова открыли
       - closed       # PR закрыли или объединили с main
 
 jobs:
-  # Этот job создаёт или обновляет preview
+  # Создаём или обновляем preview
   deploy-preview:
-    # Не запускать этот job, если PR уже закрыт
+    # При закрытом PR этот job не запускается
     if: github.event.action != 'closed'
-
     runs-on: ubuntu-latest
 
     steps:
+      # Загружаем на GitHub Runner код именно из ветки PR
+      - name: Checkout PR code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      # Авторизуем GitHub Runner в GHCR
+      - name: Login to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Собираем frontend и публикуем готовый образ в GHCR
+      # Например, для PR №2 тег образа будет pr-2
+      - name: Build and push preview image
+        uses: docker/build-push-action@v7
+        with:
+          context: ./frontend
+          push: true
+          tags: ghcr.io/entryfra/preview-deployment-frontend:pr-${{ github.event.pull_request.number }}
+
+      # Подключаемся к VPS и запускаем готовый образ
       - name: Deploy preview on server
         uses: appleboy/ssh-action@v1
-
         with:
-          # Данные для подключения GitHub Actions к серверу по SSH
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
 
           script: |
-            # Переходим в папку проекта на сервере
-             cd /home/preview-deployment-lab
+            cd /home/preview-deployment-lab
 
-            # Загружаем свежие коммиты из GitHub
+            # Загружаем свежие данные Git
             git fetch origin
 
-            # Переключаем сервер на код конкретного Pull Request
+            # Переключаем папку на код конкретного PR
             git checkout ${{ github.event.pull_request.head.sha }}
 
-            # GitHub сам подставляет номер PR
-            # Например, для PR №18 получится:
-            # PR_NUMBER=18 и project name preview-18
+            # Скачиваем готовый образ PR из GHCR
             PR_NUMBER=${{ github.event.pull_request.number }} docker compose \
               -f docker-compose.preview.yml \
               -p preview-${{ github.event.pull_request.number }} \
-              up -d --build
+              pull
 
+            # Запускаем или обновляем preview-контейнер
+            PR_NUMBER=${{ github.event.pull_request.number }} docker compose \
+              -f docker-compose.preview.yml \
+              -p preview-${{ github.event.pull_request.number }} \
+              up -d --force-recreate
 
-  # После успешного деплоя оставляем ссылку в Pull Request
+      # Оставляем сообщение в Pull Request
       - name: Comment preview link
         uses: actions/github-script@v7
         with:
@@ -65,30 +89,23 @@ jobs:
               Адрес: http://pr-${{ github.event.pull_request.number }}.localhost`
             })
 
-
-              
-  # Этот job удаляет preview после закрытия или merge PR
+  # Удаляем preview после закрытия или merge PR
   delete-preview:
-    # Запускать только при событии closed
     if: github.event.action == 'closed'
-
     runs-on: ubuntu-latest
 
     steps:
       - name: Delete preview from server
         uses: appleboy/ssh-action@v1
-
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
 
           script: |
-            # Переходим в папку проекта на сервере
-             cd /home/preview-deployment-lab
+            cd /home/preview-deployment-lab
 
-            # Удаляем compose-проект именно этого PR
-            # Например, для PR №18 удалится preview-18
+            # Удаляем контейнеры конкретного PR
             PR_NUMBER=${{ github.event.pull_request.number }} docker compose \
               -f docker-compose.preview.yml \
               -p preview-${{ github.event.pull_request.number }} \
