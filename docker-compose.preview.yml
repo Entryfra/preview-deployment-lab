@@ -8,7 +8,7 @@ services:
       - traefik.enable=true
 
       # Для PR №2 получится адрес pr-2.localhost
-      - traefik.http.routers.frontend-pr-${PR_NUMBER}.rule=Host(`pr-${PR_NUMBER}.localhost`)
+      - traefik.http.routers.frontend-pr-${PR_NUMBER}.rule=Host(`pr-${PR_NUMBER}.preview.santailya.ru`)
       - traefik.http.routers.frontend-pr-${PR_NUMBER}.entrypoints=web
 
       # Frontend внутри контейнера слушает порт 80
