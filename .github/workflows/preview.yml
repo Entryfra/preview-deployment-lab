@@ -1,0 +1,73 @@
+name: Preview Deployment
+
+# Запускаем workflow при событиях Pull Request
+on:
+  pull_request:
+    types:
+      - opened       # PR создали
+      - synchronize  # в ветку PR запушили новый коммит
+      - reopened     # закрытый PR снова открыли
+      - closed       # PR закрыли или объединили с main
+
+jobs:
+  # Этот job создаёт или обновляет preview
+  deploy-preview:
+    # Не запускать этот job, если PR уже закрыт
+    if: github.event.action != 'closed'
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy preview on server
+        uses: appleboy/ssh-action@v1
+
+        with:
+          # Данные для подключения GitHub Actions к серверу по SSH
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+          script: |
+            # Переходим в папку проекта на сервере
+            cd ~/preview-deployment-lab
+
+            # Загружаем свежие коммиты из GitHub
+            git fetch origin
+
+            # Переключаем сервер на код конкретного Pull Request
+            git checkout ${{ github.event.pull_request.head.sha }}
+
+            # GitHub сам подставляет номер PR
+            # Например, для PR №18 получится:
+            # PR_NUMBER=18 и project name preview-18
+            PR_NUMBER=${{ github.event.pull_request.number }} docker compose \
+              -f docker-compose.preview.yml \
+              -p preview-${{ github.event.pull_request.number }} \
+              up -d --build
+
+  # Этот job удаляет preview после закрытия или merge PR
+  delete-preview:
+    # Запускать только при событии closed
+    if: github.event.action == 'closed'
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Delete preview from server
+        uses: appleboy/ssh-action@v1
+
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+          script: |
+            # Переходим в папку проекта на сервере
+            cd ~/preview-deployment-lab
+
+            # Удаляем compose-проект именно этого PR
+            # Например, для PR №18 удалится preview-18
+            PR_NUMBER=${{ github.event.pull_request.number }} docker compose \
+              -f docker-compose.preview.yml \
+              -p preview-${{ github.event.pull_request.number }} \
+              down --remove-orphans
