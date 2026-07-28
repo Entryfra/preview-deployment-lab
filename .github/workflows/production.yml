@@ -1,0 +1,86 @@
+name: Production Deployment
+
+permissions:
+  contents: read
+  packages: write
+
+# Запускаем после каждого push в main
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy-production:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Загружаем код из main
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Включаем pnpm
+      - name: Enable pnpm
+        run: corepack enable
+
+      # Устанавливаем зависимости frontend
+      - name: Install frontend dependencies
+        working-directory: ./frontend
+        run: pnpm install --frozen-lockfile
+
+      # Проверяем код
+      - name: Lint frontend
+        working-directory: ./frontend
+        run: pnpm lint
+
+      # Проверяем, что frontend собирается
+      - name: Build frontend
+        working-directory: ./frontend
+        run: pnpm build
+
+      # Входим в GitHub Container Registry
+      - name: Login to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Собираем production-образ и публикуем в GHCR
+      - name: Build and push production image
+        uses: docker/build-push-action@v7
+        with:
+          context: ./frontend
+          push: true
+          tags: ghcr.io/entryfra/preview-deployment-frontend:latest
+
+      # Подключаемся к VPS и обновляем production
+      - name: Deploy production on server
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+          script: |
+
+            set -e
+
+            cd /home/preview-deployment-lab
+
+            # Обновляем main
+            git fetch origin
+            git checkout main
+            git reset --hard origin/main
+
+            # Скачиваем новый production-образ
+            docker compose \
+              -p production \
+              -f docker-compose.prod.yml \
+              pull
+
+            # Перезапускаем production
+            docker compose \
+              -p production \
+              -f docker-compose.prod.yml \
+              up -d --force-recreate            
