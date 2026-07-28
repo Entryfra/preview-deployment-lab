@@ -135,4 +135,4 @@ jobs:
             PR_NUMBER=${{ github.event.pull_request.number }} docker compose \
               -f docker-compose.preview.yml \
               -p preview-${{ github.event.pull_request.number }} \
-              down --remove-orphans
+              down -v --remove-orphans
