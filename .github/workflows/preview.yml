@@ -63,7 +63,15 @@ jobs:
           context: ./frontend
           push: true
           tags: ghcr.io/entryfra/preview-deployment-frontend:pr-${{ github.event.pull_request.number }}
-
+      
+      # Собираем backend и публикуем образ в GHCR
+      - name: Build and push backend preview image
+        uses: docker/build-push-action@v7
+        with:
+          context: ./backend
+          push: true
+          tags: ghcr.io/entryfra/preview-deployment-backend:pr-${{ github.event.pull_request.number }}
+            
       # Подключаемся к VPS и запускаем готовый образ
       - name: Deploy preview on server
         uses: appleboy/ssh-action@v1
@@ -127,4 +135,4 @@ jobs:
             PR_NUMBER=${{ github.event.pull_request.number }} docker compose \
               -f docker-compose.preview.yml \
               -p preview-${{ github.event.pull_request.number }} \
-              down --remove-orphans
+              down -v --remove-orphans
