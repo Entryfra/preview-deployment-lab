@@ -345,3 +345,183 @@ docker compose up -d
 - Следующий этап:
   подключить backend через Traefik и убрать внешний порт 3000.
 
+
+
+  Глава: Preview Deployment
+# Preview Deployment
+
+## Архитектура
+
+Developer
+    │
+git push
+    │
+    ▼
+GitHub
+    │
+    ▼
+GitHub Actions
+    │
+    ▼
+Build
+    │
+    ▼
+Docker Image
+    │
+    ▼
+GHCR
+    │
+    ▼
+SSH
+    │
+    ▼
+VPS
+    │
+    ▼
+Traefik
+    │
+    ▼
+Preview Container
+Что делает Traefik
+
+Очень простыми словами:
+
+Traefik — это диспетчер.
+
+Он получает запрос.
+
+Смотрит:
+
+На какой домен пришёл пользователь?
+
+Если:
+
+pr-5.preview.santailya.ru
+
+↓
+
+отправляет пользователя
+в контейнер Preview-5.
+Что делает DNS
+DNS не знает ничего про Docker.
+
+Он знает только:
+
+какому IP принадлежит домен.
+Wildcard DNS
+*.preview.santailya.ru
+
+↓
+
+Все адреса
+
+pr-1.preview...
+
+pr-2.preview...
+
+pr-999.preview...
+
+ведут на один VPS.
+GitHub Actions Preview
+PR
+
+↓
+
+Checkout
+
+↓
+
+Install
+
+↓
+
+Lint
+
+↓
+
+Build
+
+↓
+
+Docker Build
+
+↓
+
+Push GHCR
+
+↓
+
+SSH
+
+↓
+
+docker compose
+
+↓
+
+Preview готов
+Кто за что отвечает
+DNS
+
+↓
+
+Находит сервер
+
+--------------------
+
+Traefik
+
+↓
+
+Находит контейнер
+
+--------------------
+
+GitHub Actions
+
+↓
+
+Создаёт контейнер
+Git Flow
+main
+
+│
+
+├── feature/login
+
+├── feature/preview
+
+├── feature/backend
+
+↓
+
+Pull Request
+
+↓
+
+Preview
+
+↓
+
+Merge
+
+↓
+
+main
+GHCR
+Образы НЕ лежат на VPS.
+
+Они лежат в GHCR.
+
+VPS их только скачивает.
+Что осталось
+□ Production Deployment
+
+□ HTTPS
+
+□ Convex
+
+□ Full Preview Stack
+
+□ Kubernetes
+
