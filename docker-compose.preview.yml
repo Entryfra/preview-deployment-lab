@@ -1,24 +1,61 @@
 services:
   frontend-preview:
-    # Берём готовый образ из GHCR.
-    # PR_NUMBER превратится, например, в pr-2.
     image: ghcr.io/entryfra/preview-deployment-frontend:pr-${PR_NUMBER}
 
     labels:
       - traefik.enable=true
 
-      # Для PR №2 получится адрес pr-2.localhost
       - traefik.http.routers.frontend-pr-${PR_NUMBER}.rule=Host(`pr-${PR_NUMBER}.preview.santailya.ru`)
       - traefik.http.routers.frontend-pr-${PR_NUMBER}.entrypoints=web
 
-      # Frontend внутри контейнера слушает порт 80
       - traefik.http.services.frontend-pr-${PR_NUMBER}.loadbalancer.server.port=80
 
-    # Подключаем preview к сети, где находится общий Traefik
     networks:
-      - traefik-network
+      - preview-network
+
+  backend-preview:
+    image: ghcr.io/entryfra/preview-deployment-backend:pr-${PR_NUMBER}
+
+    environment:
+      DB_HOST: postgres-preview
+      DB_PORT: 5432
+      DB_NAME: petdb
+      DB_USER: petuser
+      DB_PASSWORD: petpassword
+
+    depends_on:
+      - postgres-preview
+
+    labels:
+      - traefik.enable=true
+
+      - traefik.http.routers.backend-pr-${PR_NUMBER}.rule=Host(`pr-${PR_NUMBER}.preview.santailya.ru`) && PathPrefix(`/api`)
+      - traefik.http.routers.backend-pr-${PR_NUMBER}.entrypoints=web
+
+      - traefik.http.services.backend-pr-${PR_NUMBER}.loadbalancer.server.port=3000
+
+    networks:
+      - preview-network
+
+  postgres-preview:
+    image: postgres:17-alpine
+
+    environment:
+      POSTGRES_DB: petdb
+      POSTGRES_USER: petuser
+      POSTGRES_PASSWORD: petpassword
+
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
+
+    networks:
+      - preview-network
+
+volumes:
+  postgres-data:
 
 networks:
-  traefik-network:
+  preview-network:
     external: true
     name: preview-deployment-lab_default

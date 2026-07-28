@@ -14,7 +14,7 @@ const pool = new Pool({
 const server = http.createServer(async (req, res) => {
   res.setHeader("Content-Type", "application/json");
 
-  if (req.url === "/notes") {
+  if (req.url === "/api/notes") {
     try {
       const result = await pool.query(
         "SELECT id, text FROM notes ORDER BY id"
@@ -39,7 +39,7 @@ const server = http.createServer(async (req, res) => {
   res.writeHead(200);
   res.end(
     JSON.stringify({
-      message: "Backend works!!!",
+      message: "Андрюх ку!!!",
     })
   );
 });
